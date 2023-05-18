@@ -1,0 +1,80 @@
+use std::env;
+
+pub fn get_env_str(val: &str, env_key: &str, default: &str) -> String {
+    if !val.is_empty() {
+        return format!("{}", val);
+    }
+    match env::var(env_key) {
+        Ok(env_val) => env_val,
+        Err(_e) => format!("{}", default),
+    }
+}
+
+
+fn shell_expand(path: &str) -> String {
+    shellexpand::tilde(path).to_string()
+}
+
+pub fn shell_exists(path: &str) -> String {
+    let path = shellexpand::tilde(path).to_string();
+    if std::path::Path::new(path.as_str()).exists() {
+        return path;
+    }
+    "".to_string()
+}
+
+pub fn get_env_path(val: &str, env_key: &str, default: &str) -> String {
+    if !val.is_empty() {
+        return format!("{}", shell_expand(val));
+    }
+    match env::var(env_key) {
+        Ok(env_val) => shell_expand(env_val.as_str()),
+        Err(_e) => {
+            format!("{}", shell_exists(default))
+        }
+    }
+}
+
+pub fn get_env_bool(val: bool, env_key: &str) -> bool {
+    if val {
+        return val;
+    }
+    if let Ok(_) = env::var(env_key) {
+        return true;
+    }
+    false
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_get_env_str() {
+        const TEST_ISSET: &str = "is set";
+        const TEST_VAR: &str = "TEST_VAR_STR";
+        const TEST_VAL: &str = "from env";
+        const TEST_DEFAULT: &str = "default";
+        env::set_var(TEST_VAR, TEST_VAL);
+        assert_eq!(get_env_str("", TEST_VAR, ""), TEST_VAL);
+        assert_eq!(get_env_str(TEST_ISSET, TEST_VAR, ""), TEST_ISSET);
+        assert_eq!(get_env_str("", TEST_VAR, TEST_DEFAULT), TEST_VAL);
+        env::remove_var(TEST_VAR);
+        assert_eq!(get_env_str("", TEST_VAR, ""), "");
+        assert_eq!(get_env_str(TEST_ISSET, TEST_VAR, ""), TEST_ISSET);
+        assert_eq!(get_env_str("", TEST_VAR, TEST_DEFAULT), TEST_DEFAULT);
+    }
+    #[test]
+    fn test_get_env_bool() {
+        const TEST_VAR: &str = "TEST_VAR_BOOL";
+        const TEST_VAL: &str = "is set";
+        env::set_var(TEST_VAR, TEST_VAL);
+        for val in [true, false] {
+            assert_eq!(get_env_bool(val, TEST_VAR), true);
+        }
+        env::remove_var(TEST_VAR);
+        for val in [true, false] {
+            assert_eq!(get_env_bool(val, TEST_VAR), val);
+        }
+    }
+}

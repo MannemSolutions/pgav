@@ -7,7 +7,6 @@ target
 *.profdata
 coverage.out
 
-
 config/tls
 config/stderr.log
 config/stdout.log

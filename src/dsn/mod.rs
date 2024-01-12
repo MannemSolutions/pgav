@@ -6,7 +6,7 @@ use postgres_openssl::MakeTlsConnector;
 use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::fmt;
-use users::{get_current_uid, get_user_by_uid};
+use uzers::{get_current_uid, get_user_by_uid};
 
 #[derive(Debug, Clone)]
 pub struct Dsn {

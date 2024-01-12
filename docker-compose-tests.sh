@@ -5,6 +5,7 @@ docker-compose down --remove-orphans || echo new or partial install
 docker rmi pgav_pgav || echo image was not there
 if [ ! -e config/tls/int_server/certs/localhost.pem ]; then
   rm -rf config/tls
+  chmod 777 config
   docker-compose up chainsmith
 fi
 docker-compose up -d postgres
@@ -22,4 +23,14 @@ export PGSSLROOTCERT=config/tls/int_server/certs/ca-chain-bundle.cert.pem
 
 cargo test -- --include-ignored
 
-docker-compose up pgav
+docker-compose up -d pgav
+
+for ((i=1;i<11;i++)); do
+  docker compose stop postgres
+  time sleep $i
+  docker compose start postgres
+  sleep $i
+  docker-compose logs pgav | grep WARN && break
+done
+
+docker-compose logs pgav | grep WARN || exit 1

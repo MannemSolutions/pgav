@@ -16,7 +16,7 @@ services:
     - ./:/host
     - ./config/postgresql.conf:/etc/postgresql/postgresql.conf
   chainsmith:
-    image: chainsmith
+    image: mannemsolutions/chainsmith
     volumes:
     - ./:/host
     environment:
@@ -31,3 +31,5 @@ services:
       PGSSLCERT: /host/config/tls/int_client/certs/postgres.pem
       PGSSLKEY: /host/config/tls/int_client/private/postgres.key.pem
       PGSSLROOTCERT: /host/config/tls/int_server/certs/ca-chain-bundle.cert.pem
+      PGAVSLEEPTIME: 1s
+      PGAVTIMEOUT: 2s

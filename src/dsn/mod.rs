@@ -1,11 +1,12 @@
 use crate::generic;
+use log::error;
 use openssl::ssl::{SslConnector, SslFiletype, SslMethod};
 use postgres::{Client, NoTls};
 use postgres_openssl::MakeTlsConnector;
 use std::borrow::Borrow;
 use std::collections::HashMap;
+use std::fmt;
 use users::{get_current_uid, get_user_by_uid};
-use log::error;
 
 #[derive(Debug, Clone)]
 pub struct Dsn {
@@ -24,12 +25,25 @@ fn os_user_name() -> String {
     user.to_string()
 }
 
+impl fmt::Display for Dsn {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut vec = Vec::new();
+        for (k, mut v) in self.clone().kv {
+            v = v.replace('\\', r"\\");
+            v = v.replace('\'', r"\'");
+            vec.push(format!("{0}='{1}'", k, v))
+        }
+        vec.sort();
+        write!(f, "{}", vec.join(" "))
+    }
+}
+
 impl Dsn {
     pub fn from_string(from: &str) -> Dsn {
         let mut dsn = Dsn::new();
-        let split = from.split(" ");
+        let split = from.split(' ');
         for s in split {
-            if let Some((key, value)) = s.split_once("=") {
+            if let Some((key, value)) = s.split_once('=') {
                 dsn.set_value(key, value)
             }
         }
@@ -104,18 +118,8 @@ impl Dsn {
             if k == "password" {
                 v = "*****".to_string();
             }
-            v = v.replace(r"\", r"\\");
-            v = v.replace("'", r"\'");
-            vec.push(format!("{0}='{1}'", k, v))
-        }
-        vec.sort();
-        vec.join(" ")
-    }
-    pub fn to_string(&self) -> String {
-        let mut vec = Vec::new();
-        for (k, mut v) in self.clone().kv {
-            v = v.replace(r"\", r"\\");
-            v = v.replace("'", r"\'");
+            v = v.replace('\\', r"\\");
+            v = v.replace('\'', r"\'");
             vec.push(format!("{0}='{1}'", k, v))
         }
         vec.sort();
@@ -151,7 +155,7 @@ impl Dsn {
         let cert_file = self.get_value("sslcert", "");
         if !self.copy().use_tls() || cert_file.is_empty() {
             let client = postgres::Client::connect(conn_string, NoTls)?;
-            return Ok(client)
+            return Ok(client);
             // The source_connection object performs the actual communication
             // with the database, so spawn it off to run on its own.
         }
@@ -230,7 +234,10 @@ mod tests {
         assert_eq!(d.use_tls(), true);
         assert_eq!(
             d.cleanse().to_string(),
-            format!(concat!("dbname='{0}' host='/tmp' password='' port='5432' user='{0}'"), os_user_name())
+            format!(
+                concat!("dbname='{0}' host='/tmp' password='' port='5432' user='{0}'"),
+                os_user_name()
+            )
         );
         let sslcert = generic::shell_exists("~/.postgresql/postgresql.crt");
         let sslcrl = generic::shell_exists("~/.postgresql/root.crl");

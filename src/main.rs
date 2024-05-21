@@ -5,28 +5,11 @@ extern crate postgres;
 use log::{debug, info, warn, LevelFilter};
 use postgres::{error::SqlState, Client};
 use simple_logger::SimpleLogger;
-use std::fmt;
 use std::time::Duration;
 
 mod cli;
 mod dsn;
 mod generic;
-
-#[derive(Debug, Clone)]
-struct NoRows;
-
-impl std::error::Error for NoRows {}
-
-// Generation of an error is completely separate from how it is displayed.
-// There's no need to be concerned about cluttering complex logic with the display style.
-//
-// Note that we don't store any extra info about the errors. This means we can't state
-// which string failed to parse without modifying our types to carry that information.
-impl fmt::Display for NoRows {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "table without rows")
-    }
-}
 
 fn create_table(client: &mut Client) {
     debug!(target: "create", "creating table");

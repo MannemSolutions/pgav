@@ -35,9 +35,10 @@ jobs:
           target: ${{ matrix.platform.target }}
           args: '--locked --release'
           strip: true
-      - name: Publish artifacts and release
-        uses: houseabsolute/actions-rust-release@v0
+      - name: Add SBOM and LICENSES.md to release
+        uses: softprops/action-gh-release@v2
         with:
-          executable-name: pgav
-          target: ${{ matrix.platform.target }}
-          changes-file: ''
+          files: |
+            target/${{ matrix.platform.target }}/release/pgav
+            LICENSES
+            README.md

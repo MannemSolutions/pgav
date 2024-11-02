@@ -5,28 +5,41 @@ on:
   workflow_dispatch:
 
 jobs:
-  build_binaries:
-    name: Build and push binaries
-    runs-on: ubuntu-latest
+  release:
+    name: Release - ${{ matrix.platform.os-name }}
     strategy:
-      fail-fast: false
       matrix:
-        arch:
-          - x86_64
-          - aarch64
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set version
-        run: ./set_version.sh
-      - uses: dtolnay/rust-toolchain@stable
-      - run: |
-          cargo build -r --platform ${{ matrix.arch }}-unknown-linux-musl
-          tar -acvf pgav_linux_${{ matrix.arch }}.tar.gz README.md LICENSE -C target/release pgav
+        platform:
+          - os-name: FreeBSD-x86_64
+            runs-on: ubuntu-20.04
+            target: x86_64-unknown-freebsd
+            skip_tests: true
 
-      - name: Add to release
-        uses: softprops/action-gh-release@v2
+          - os-name: Linux-x86_64
+            runs-on: ubuntu-20.04
+            target: x86_64-unknown-linux-musl
+
+          - os-name: Linux-aarch64
+            runs-on: ubuntu-20.04
+            target: aarch64-unknown-linux-musl
+
+          - os-name: macOS-x86_64
+            runs-on: macOS-latest
+            target: x86_64-apple-darwin
+
+    runs-on: ${{ matrix.platform.runs-on }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Build binary
+        uses: houseabsolute/actions-rust-cross@v0
         with:
-          files: |
-            pgav_linux_${{ matrix.aarch }}.tar.gz
-            README.md
-            LICENSE
+          command: build
+          target: ${{ matrix.platform.target }}
+          args: '--locked --release'
+          strip: true
+      - name: Publish artifacts and release
+        uses: houseabsolute/actions-rust-release@v0
+        with:
+          executable-name: pgav
+          target: ${{ matrix.platform.target }}

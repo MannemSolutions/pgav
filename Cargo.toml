@@ -1,8 +1,8 @@
 [package]
 name = "pgav"
 version = "0.1.1"
-authors = ["Sebastiaan Mannem <sebastiaan.mannem@enterprisedb.com>"]
-edition = "2018"
+authors = ["Sebastiaan Mannem <sebas@mannemsolutions.nl>"]
+edition = "2021"
 
 [dependencies]
 postgres = { version = "0.19.5", features = ["with-chrono-0_4"] }

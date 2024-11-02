@@ -1,7 +1,8 @@
 # Refer to https://github.com/marketplace/actions/rust-release-binary for more info
 on:
   release:
-    types: [created]
+    types:
+      - published
 
 jobs:
   push_to_registry:

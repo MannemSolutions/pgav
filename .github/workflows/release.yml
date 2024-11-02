@@ -2,58 +2,31 @@
 on:
   release:
     types: [created]
+  workflow_dispatch:
 
 jobs:
-  release:
-    name: release ${{ matrix.target }}
+  build_binaries:
+    name: Build and push binaries
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        target:
-          #- x86_64-pc-windows-gnu
-          - x86_64-unknown-linux-musl
-
+        arch:
+          - x86_64
+          - aarch64
     steps:
-      #- run: echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" | Out-File -FilePath $env:GITHUB_ENV -Append
-      #  if: runner.os == 'Windows'
-      #- run: vcpkg install openssl:x64-windows-static-md
-      #  if: runner.os == 'Windows'
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v4
       - name: Set version
         run: ./set_version.sh
-      - name: Compile and release
-        uses: rust-build/rust-build.action@latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: dtolnay/rust-toolchain@stable
+      - run: |
+          cargo build -r --platform ${{ matrix.arch }}-unknown-linux-musl
+          tar -acvf pgav_linux_${{ matrix.arch }}.tar.gz README.md LICENSE -C target/release pgav
+
+      - name: Add to release
+        uses: softprops/action-gh-release@v2
         with:
-          RUSTTARGET: ${{ matrix.target }}
-          EXTRA_FILES: "README.md LICENSE"
-
-  push_to_registry:
-    name: Push Docker image to Docker Hub
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out the repo
-        uses: actions/checkout@master
-
-      - name: Set version
-        run: ./set_version.sh
-
-      - name: 'Login to GitHub Container Registry'
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{github.actor}}
-          password: ${{secrets.GITHUB_TOKEN}}
-
-      - name: 'Build'
-        run: |
-          docker build -t pgav .
-
-      - name: 'tag and push to ghcr.io'
-        run: |
-          for TAG in latest ${{ github.ref_name }}; do
-            docker tag pgav ghcr.io/mannemsolutions/pgav:${TAG}
-            docker push ghcr.io/mannemsolutions/pgav:${TAG}
-          done
+          files: |
+            pgav_linux_${{ matrix.aarch }}.tar.gz
+            README.md
+            LICENSE

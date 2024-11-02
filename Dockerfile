@@ -1,7 +1,8 @@
 FROM rust:latest AS builder
 WORKDIR /usr/src/app
 
-COPY . .
+COPY src src
+COPY Cargo.* .
 RUN cargo install --path .
 
 FROM debian:latest

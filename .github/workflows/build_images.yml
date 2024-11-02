@@ -32,11 +32,11 @@ jobs:
           password: ${{secrets.GITHUB_TOKEN}}
 
       - name: Docker meta
-        id: stolon-meta
+        id: pgav-meta
         uses: docker/metadata-action@v5
         with:
           images: |
-            name=ghcr.io/${{ github.repository_owner }}/stolon-proxy,enable=true
+            name=ghcr.io/${{ github.repository_owner }}/pgav,enable=true
           tags: |
             type=semver,pattern={{raw}}
             type=raw,value=latest
@@ -48,6 +48,6 @@ jobs:
           context: .
           push: true
           platforms: 'linux/amd64,linux/arm64'
-          tags: ${{ steps.opr-paas-meta.outputs.tags }}
-          labels: ${{ steps.opr-paas-meta.outputs.labels }}
+          tags: ${{ steps.pgav-meta.outputs.tags }}
+          labels: ${{ steps.pgav-meta.outputs.labels }}
           build-args: VERSION=${{ github.ref_name }}

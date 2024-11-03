@@ -35,10 +35,13 @@ jobs:
           target: ${{ matrix.platform.target }}
           args: '--locked --release'
           strip: true
+      - name: create tar file
+        run: |
+          tar -acvf pgav_${{github.ref_name}}_${{ matrix.platform.os-name }}.tar.gz README.md LICENSE -C target/${{ matrix.platform.target }}/release pgav
       - name: Add SBOM and LICENSES.md to release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            target/${{ matrix.platform.target }}/release/pgav
+            pgav_${{github.ref_name}}_${{ matrix.platform.os-name }}.tar.gz
             LICENSES
             README.md
